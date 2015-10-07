@@ -1,16 +1,89 @@
-<!doctype text/html>
+<!doctype html>
 <html>
-<head><title>CHUX: Chat App Demo v0.01 Alpha</title>
+<head>
+
+	<title>CHUX: Chat App Demo v0.03 Alpha</title>
+	
+	<script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
+	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+
 </head>
+
 <body>
 
-<h1>This is a test</h1>
+<h1>Firebase Chat Test</h1>
 
-<p>This is the body.</p>
+<div id='messagesDiv'></div>
 
-<p>This should only be added to v0.02alpha.</p>
+<input type='text' id='nameInput' placeholder='Name'>
+<input type='text' id='messageInput' placeholder='Message'>
 
+<script>
+var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com');
+      
+      // Listen for the ENTER key.
+      // When hit, get user name and message
+      // Add it to Firebase
+      // Firebase will throw a child_added event
+      $('#messageInput').keypress(function (e) {
+        if (e.keyCode == 13) {
+          var name = $('#nameInput').val();
+          var text = $('#messageInput').val();
+          chatDB.child('messages').push({name: name, text: text});
+          $('#messageInput').val('');
+        }
+      });
+
+      // Update the chat message list when a new message is added
+      // The data will contain the new message only
+      chatDB.child('messages').on('child_added', function(data) {
+        
+        var message = data.val();
+        displayChatMessage(message.name, message.text);
+        
+      });
+
+      // Update the chat message list when a post is deleted.
+      // The data will contain only the deleted post.
+      // We will get all the post data to redisplay the list.
+      //
+      // Note: Another method would be to use Jquery to find and selective remove only
+      // the deleted post from the list (without updating the entire list)
+      chatDB.child('messages').on('child_removed', function(data) {
+
+      	chatDB.once('value', function (data) {
+
+      			console.log(data.val());
+
+      			var messages = data.val().messages;
+				
+				$('#messagesDiv').html(''); // Clear the current messages
+
+				$.each(messages, function(key, msg) {
+					displayChatMessage(msg.name, msg.text);
+				});
+      	});
+
+        		
+      });
+
+      // This listener will run everytime a change is made to the data
+      chatDB.child('messages').on('value', function(data) {
+      	// Placeholder; TBD
+      });
+
+      // Add a single message to the list (div) by appending it to current data.
+      // It scrolls the page to the last message.
+      function displayChatMessage(name, text) {
+        $('<div/>').text(text).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'));
+        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight;
+      };
+
+
+</script>
 
 </body>
 
 </html>
+
+
