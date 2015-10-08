@@ -19,7 +19,7 @@
 <input type='text' id='messageInput' placeholder='Message'>
 
 <script>
-var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com');
+var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
       
       // Listen for the ENTER key.
       // When hit, get user name and message
@@ -27,21 +27,22 @@ var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com');
       // Firebase will throw a child_added event
       $('#messageInput').keypress(function (e) {
         if (e.keyCode == 13) {
-          var name = $('#nameInput').val();
-          var text = $('#messageInput').val();
-          chatDB.child('messages').push({name: name, text: text});
-          $('#messageInput').val('');
+          var name = $('#nameInput').val()
+          var text = $('#messageInput').val()
+          chatDB.child('messages').push({name: name, text: text})
+          $('#messageInput').val('')
         }
-      });
+      })
 
       // Update the chat message list when a new message is added
       // The data will contain the new message only
       chatDB.child('messages').on('child_added', function(data) {
-        
-        var message = data.val();
-        displayChatMessage(message.name, message.text);
-        
-      });
+
+        var message = data.val()
+        var messageKey = data.key()
+        displayChatMessage(message.name, message.text, messageKey)
+
+      })
 
       // Update the chat message list when a post is deleted.
       // The data will contain only the deleted post.
@@ -53,31 +54,42 @@ var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com');
 
       	chatDB.once('value', function (data) {
 
-      			console.log(data.val());
+			var messages = data.val().messages
+			
+			$('#messagesDiv').html('') // Clear the current messages
 
-      			var messages = data.val().messages;
-				
-				$('#messagesDiv').html(''); // Clear the current messages
-
-				$.each(messages, function(key, msg) {
-					displayChatMessage(msg.name, msg.text);
-				});
-      	});
-
-        		
-      });
+			$.each(messages, function(key, msg) {
+				displayChatMessage(msg.name, msg.text, key)
+			})
+      	})
+      })
 
       // This listener will run everytime a change is made to the data
       chatDB.child('messages').on('value', function(data) {
       	// Placeholder; TBD
-      });
+      })
 
       // Add a single message to the list (div) by appending it to current data.
       // It scrolls the page to the last message.
-      function displayChatMessage(name, text) {
-        $('<div/>').text(text).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'));
-        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight;
-      };
+      function displayChatMessage(name, text, postid) {
+        
+		if (postid) {
+		    //var deleteLink = '[<a href="' + postid + '">x</a>]'
+		    var deleteLink = '[<a href="javascript:deleteChatMessage(\'' + postid + '\')">x</a>]'
+		}
+		else{
+			var deleteLink = ''
+		}
+
+        $('<div/>').html(text + ' ' + deleteLink).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'))
+        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
+      }
+
+      function deleteChatMessage(postid){
+      	// /messages/{postid}
+
+      	chatDB.child('messages').child(postid).remove()
+      }
 
 
 </script>
