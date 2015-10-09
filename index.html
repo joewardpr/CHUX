@@ -37,13 +37,11 @@
 	  	console.log("Login Failed!", error)
 
 	  } else {
-	    console.log("Authenticated successfully with payload:", authData)
+	    //console.log("Authenticated successfully with payload:", authData)
 
 
 	      twitterUsername = authData.twitter.username
 	      twitterAvatarURL = authData.twitter.profileImageURL
-
-	      console.log(twitterUsername + " : " + twitterAvatarURL)
 
 	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'>').prepend("Logged in as:<br/>")
 
@@ -85,13 +83,16 @@
 
 	      	chatDB.once('value', function (data) {
 
-				var messages = data.val().messages
-				
 				$('#messagesDiv').html('') // Clear the current messages
+	      		if (data.val() !== null) {
+	      		
+					var messages = data.val().messages
 
-				$.each(messages, function(key, msg) {
-					displayChatMessage(msg.name, msg.text, key)
-				})
+					$.each(messages, function(key, msg) {
+						displayChatMessage(msg.name, msg.text, key)
+					})
+				}
+
 	      	})
 	      })
 
