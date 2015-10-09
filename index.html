@@ -13,89 +13,120 @@
 
 <h1>Firebase Chat Test</h1>
 
+<div id='loggedUser'></div>
+<div>&nbsp;</div>
 <div id='messagesDiv'></div>
+<div>&nbsp;</div>
 
-<input type='text' id='nameInput' placeholder='Name'>
-<input type='text' id='messageInput' placeholder='Message'>
+<input type='hidden' id='nameInput'>
+<input type='input' id='messageInput' placeholder='What is up?' autofocus size='80'>
 
 <script>
-var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
-      
-      // Listen for the ENTER key.
-      // When hit, get user name and message
-      // Add it to Firebase
-      // Firebase will throw a child_added event
-      $('#messageInput').keypress(function (e) {
-        if (e.keyCode == 13) {
-          var name = $('#nameInput').val()
-          var text = $('#messageInput').val()
-          chatDB.child('messages').push({name: name, text: text})
-          $('#messageInput').val('')
-        }
-      })
 
-      // Update the chat message list when a new message is added
-      // The data will contain the new message only
-      chatDB.child('messages').on('child_added', function(data) {
+	function deleteChatMessage(postid) {
+		chatDB.child('messages').child(postid).remove()
+	}  
 
-        var message = data.val()
-        var messageKey = data.key()
-        displayChatMessage(message.name, message.text, messageKey)
+	var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
 
-      })
 
-      // Update the chat message list when a post is deleted.
-      // The data will contain only the deleted post.
-      // We will get all the post data to redisplay the list.
-      //
-      // Note: Another method would be to use Jquery to find and selective remove only
-      // the deleted post from the list (without updating the entire list)
-      chatDB.child('messages').on('child_removed', function(data) {
+	// Testing authentication with Twitter
+	chatDB.authWithOAuthPopup("twitter", function(error, authData) {
+	  
+	  if (error) {
+	  	console.log("Login Failed!", error)
 
-      	chatDB.once('value', function (data) {
+	  } else {
+	    console.log("Authenticated successfully with payload:", authData)
 
-			var messages = data.val().messages
-			
-			$('#messagesDiv').html('') // Clear the current messages
 
-			$.each(messages, function(key, msg) {
-				displayChatMessage(msg.name, msg.text, key)
-			})
-      	})
-      })
+	      twitterUsername = authData.twitter.username
+	      twitterAvatarURL = authData.twitter.profileImageURL
 
-      // This listener will run everytime a change is made to the data
-      chatDB.child('messages').on('value', function(data) {
-      	// Placeholder; TBD
-      })
+	      console.log(twitterUsername + " : " + twitterAvatarURL)
 
-      // Add a single message to the list (div) by appending it to current data.
-      // It scrolls the page to the last message.
-      function displayChatMessage(name, text, postid) {
-        
-		if (postid) {
-		    //var deleteLink = '[<a href="' + postid + '">x</a>]'
-		    var deleteLink = '[<a href="javascript:deleteChatMessage(\'' + postid + '\')">x</a>]'
-		}
-		else{
-			var deleteLink = ''
-		}
+	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'>').prepend("Logged in as:<br/>")
 
-        $('<div/>').html(text + ' ' + deleteLink).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'))
-        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
-      }
+	      $('#nameInput').val('@' + twitterUsername)
 
-      function deleteChatMessage(postid){
-      	// /messages/{postid}
 
-      	chatDB.child('messages').child(postid).remove()
-      }
+
+		  // Listen for the ENTER key.
+		  // When hit, get user name and message
+		  // Add it to Firebase
+		  // Firebase will throw a child_added event
+		  $('#messageInput').keypress(function (e) {
+		    if (e.keyCode == 13) {
+		      var name = $('#nameInput').val()
+		      var text = $('#messageInput').val()
+		      chatDB.child('messages').push({name: name, text: text})
+		      $('#messageInput').val('')
+		    }
+		  })
+
+		  // Update the chat message list when a new message is added
+		  // The data will contain the new message only
+		  chatDB.child('messages').on('child_added', function(data) {
+
+		    var message = data.val()
+		    var messageKey = data.key()
+		    displayChatMessage(message.name, message.text, messageKey)
+
+		  })
+
+	      // Update the chat message list when a post is deleted.
+	      // The data will contain only the deleted post.
+	      // We will get all the post data to redisplay the list.
+	      //
+	      // Note: Another method would be to use Jquery to find and selective remove only
+	      // the deleted post from the list (without updating the entire list)
+	      chatDB.child('messages').on('child_removed', function(data) {
+
+	      	chatDB.once('value', function (data) {
+
+				var messages = data.val().messages
+				
+				$('#messagesDiv').html('') // Clear the current messages
+
+				$.each(messages, function(key, msg) {
+					displayChatMessage(msg.name, msg.text, key)
+				})
+	      	})
+	      })
+
+	      // This listener will run everytime a change is made to the data
+	      chatDB.child('messages').on('value', function(data) {
+	      	// Placeholder; TBD
+	      })
+
+	      // Add a single message to the list (div) by appending it to current data.
+	      // It scrolls the page to the last message.
+	      function displayChatMessage(name, text, postid) {
+	        
+			if (postid) {
+			    //var deleteLink = '[<a href="' + postid + '">x</a>]'
+			    var deleteLink = '[<a href="javascript:deleteChatMessage(\'' + postid + '\');">x</a>]'
+			}
+			else{
+				var deleteLink = ''
+			}
+
+	        $('<div/>').html(text + ' ' + deleteLink).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'))
+	        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
+	      }
+
+
+	  }
+	      
+
+
+
+
+	});
 
 
 </script>
-
 </body>
-
 </html>
 
 
