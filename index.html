@@ -4,11 +4,13 @@
 
 	<title>CHUX: Chat App Demo v0.03 Alpha</title>
 
-	<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 	
 	<script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
 	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
-	 <script src="bootstrap/js/bootstrap.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
 
 </head>
 
@@ -51,7 +53,7 @@
 	      twitterUsername = authData.twitter.username
 	      twitterAvatarURL = authData.twitter.profileImageURL
 
-	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'>').prepend("Logged in as:<br/>")
+	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'> @' + twitterUsername + ' <a href="" role="button" class="btn btn-default btn-xs">Logout</a>')
 
 	      $('#nameInput').val('@' + twitterUsername)
 
@@ -115,13 +117,13 @@
 	        
 			if (postid) {
 			    //var deleteLink = '[<a href="' + postid + '">x</a>]'
-			    var deleteLink = '[<a href="javascript:deleteChatMessage(\'' + postid + '\');">x</a>]'
+			    var deleteLink = '<a href="javascript:deleteChatMessage(\'' + postid + '\');"><span class="glyphicon glyphicon-remove"></span></a>'
 			}
 			else{
 				var deleteLink = ''
 			}
 
-	        $('<div/>').html(text + ' ' + deleteLink).prepend($('<em/>').text(name+': ')).appendTo($('#messagesDiv'))
+	        $('<div/>').html(text + ' ' + deleteLink).prepend($('<em/>').html('<span class="label label-info">' + name + '</span> ')).appendTo($('#messagesDiv'))
 	        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
 	      }
 
@@ -132,7 +134,7 @@
 
 
 
-	});
+	})
 
 
 </script>
