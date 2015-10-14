@@ -23,13 +23,16 @@
 
 <h1>Firebase Chat Test</h1>
 
-<div id='loggedUser'></div>
-<div>&nbsp;</div>
-<div id='messagesDiv'></div>
-<div>&nbsp;</div>
+<div id='chatBoxArea' style='display: none;'>
+	<div id='loggedUser'></div>
+	<div>&nbsp;</div>
+	<div id='messagesDiv'></div>
+	<div>&nbsp;</div>
 
 <input type='hidden' id='nameInput'>
 <input type='input' id='messageInput' placeholder='What is up?' autofocus size='80'>
+
+</div> <!-- chatBoxArea -->
 
 <script>
 
@@ -37,8 +40,15 @@
 		chatDB.child('messages').child(postid).remove()
 	}  
 
-	var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
+	function logout(){
+		chatDB.unauth()
+		$('#messagesDiv').html('')
+		$('#loggedUser').html('<a href="/">Login</a>')
+		$('#messageInput').hide()
 
+	}
+
+	var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
 
 	// Testing authentication with Twitter
 	chatDB.authWithOAuthPopup("twitter", function(error, authData) {
@@ -47,13 +57,23 @@
 	  	console.log("Login Failed!", error)
 
 	  } else {
-	    //console.log("Authenticated successfully with payload:", authData)
+	    console.log("Authenticated successfully with payload:", authData)
 
+		if (chatDB.getAuth()){
+			console.log("User is authenticated")
+			// Show the main chat area
+			$('#chatBoxArea').show()
+		}
+		else {
+			console.log("User is not authenticated")
+			// Hide the main chat area
+			$('#chatBoxArea').hide()
+		}
 
 	      twitterUsername = authData.twitter.username
 	      twitterAvatarURL = authData.twitter.profileImageURL
 
-	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'> @' + twitterUsername + ' <a href="" role="button" class="btn btn-default btn-xs">Logout</a>')
+	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'> @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-warning btn-xs">Logout</a>')
 
 	      $('#nameInput').val('@' + twitterUsername)
 
