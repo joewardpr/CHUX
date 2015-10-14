@@ -2,37 +2,60 @@
 <html>
 <head>
 
-	<title>CHUX: Chat App Demo v0.03 Alpha</title>
+	<title>CHUX: Chat App Demo</title>
 
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+	<link rel="stylesheet" href="chux.css">
+
+	<script src="moment.min.js"></script>
 	
 	<script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
 	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>	
 
 </head>
 
 <body>
 
 <div class='container'>
+
 	<div class='row'>
-		<div class='span2'></div>
-			<div class='span10'>
+	<!--NAVBAR-->
+		<div class="col-lg-12">
+			<div class='alertsBox'>10 New</div>
+			<div class='channelIcon'>&nbsp;</div>
+			<div class='usersIcon'>&nbsp;</div>
+		</div>
+	</div>
 
-<h1>Firebase Chat Test</h1>
+	<div class='row messageInputRow'>
+		<div class='col-lg-9'>
+			
 
-<div id='chatBoxArea' style='display: none;'>
-	<div id='loggedUser'></div>
-	<div>&nbsp;</div>
-	<div id='messagesDiv'></div>
-	<div>&nbsp;</div>
+			<div id='chatBoxArea' style='display: none;'>
+				<div id='loggedUser'></div>
+				<div>&nbsp;</div>
+				
 
-<input type='hidden' id='nameInput'>
-<input type='input' id='messageInput' placeholder='What is up?' autofocus size='80'>
+				<input type='hidden' id='nameInput'>
+				<input type='hidden' id='avatarURL'>
+				<input class='messageInputBox' id='messageInput' placeholder='What is up?'>
+			</div>
 
-</div> <!-- chatBoxArea -->
+		
+
+		</div>
+		<div class='col-lg-3' id='channelsList'>#channels</div>
+	</div>
+
+	<!-- Message list limited to 400px. Then it becomes scrollable. -->
+	<div class='row'>
+		<div class='col-lg-9' id='messagesDiv' style='overflow: scroll; height: 400px'></div>
+	</div>
+
+
 
 <script>
 
@@ -43,8 +66,9 @@
 	function logout(){
 		chatDB.unauth()
 		$('#messagesDiv').html('')
-		$('#loggedUser').html('<a href="/">Login</a>')
+		$('#loggedUser').html('<a href="/" role="button" class="btn btn-primary btn-xs">Login with Twitter</a>')
 		$('#messageInput').hide()
+		$('#channelsList').hide()
 
 	}
 
@@ -73,9 +97,13 @@
 	      twitterUsername = authData.twitter.username
 	      twitterAvatarURL = authData.twitter.profileImageURL
 
-	      $('#loggedUser').html('<img width=\'25\' src=\'' + twitterAvatarURL + '\' alt=\'@' + twitterUsername + '\'> @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-warning btn-xs">Logout</a>')
+	      $('#loggedUser').html('Logged in as @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
 
 	      $('#nameInput').val('@' + twitterUsername)
+	      $('#avatarURL').val(twitterAvatarURL)
+
+	      // Display the current logged in user's avatar in the input box
+	      $('#messageInput').css('background-image', 'url(' + twitterAvatarURL + ')').css('background-size','24px 24px');
 
 
 
@@ -87,8 +115,9 @@
 		    if (e.keyCode == 13) {
 		      var name = $('#nameInput').val()
 		      var text = $('#messageInput').val()
+		      var avatarURL = $('#avatarURL').val()
 		      var timestamp = Date.now()
-		      chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp})
+		      chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
 		      $('#messageInput').val('')
 		    }
 		  })
@@ -99,7 +128,7 @@
 
 		    var message = data.val()
 		    var messageKey = data.key()
-		    displayChatMessage(message.name, message.text, messageKey)
+		    displayChatMessage(message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
 
 		  })
 
@@ -119,7 +148,7 @@
 					var messages = data.val().messages
 
 					$.each(messages, function(key, msg) {
-						displayChatMessage(msg.name, msg.text, key)
+						displayChatMessage(msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
 					})
 				}
 
@@ -133,7 +162,7 @@
 
 	      // Add a single message to the list (div) by appending it to current data.
 	      // It scrolls the page to the last message.
-	      function displayChatMessage(name, text, postid) {
+	      function displayChatMessage(name, text, avatarURL, dateAdded, postid) {
 	        
 			if (postid) {
 			    //var deleteLink = '[<a href="' + postid + '">x</a>]'
@@ -143,28 +172,42 @@
 				var deleteLink = ''
 			}
 
-	        $('<div/>').html(text + ' ' + deleteLink).prepend($('<em/>').html('<span class="label label-info">' + name + '</span> ')).appendTo($('#messagesDiv'))
+			var theDate = new Date(dateAdded);
+			dateString = theDate.toGMTString();
+
+			var m = moment(theDate).fromNow()
+
+			msgRow = "<div class='row' style='margin-top: 16px'>"
+			msgRow += "<div class='col-sm-1 postAvatar'>"
+
+
+			msgRow += "<a href='#' data-toggle='tooltip' data-placement='right' title='" + name + "' class='steel-tooltip'><img class='postAvatar img-circle' src='" + avatarURL + "'></a>"
+			msgRow += "</div>"
+			msgRow += "<!--<div class='col-sm-1 postUsername'>"
+			msgRow += "<span class='label label-info'>" + name + "</span></div>-->"
+			msgRow += "<div class='col-sm-7 postText'>" + text + "</div>"
+			msgRow += "<div class='col-sm-2 postTimeText'>" + ' ' + m + "</div>"
+			msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLink +  "</div>"
+			msgRow += "</div>"
+
+			
+
+			$('<div/>').html(msgRow).prepend($('<em/>').html('')).appendTo($('#messagesDiv'))
 	        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
+
+	        // Must activate the tool tips each time the message list is updated
+	        $(function () {
+        		$("[data-toggle='tooltip']").tooltip();
+    		});
 	      }
 
 
 	  }
-	      
-
-
-
 
 	})
 
 
 </script>
 
-</div>
-<div class='span2'></div>
-</div> <!-- row -->
-</div> <!-- container -->
-
 </body>
 </html>
-
-
