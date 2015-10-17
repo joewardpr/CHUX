@@ -32,7 +32,7 @@
 
 	<div class='row messageInputRow'>
 		<div class='col-lg-9'>
-			
+
 
 			<div id='chatBoxArea' style='display: none;'>
 				<div id='loggedUser'></div>
@@ -50,9 +50,9 @@
 		<div class='col-lg-3' id='channelsList'>#channels</div>
 	</div>
 
-	<!-- Message list limited to 400px. Then it becomes scrollable. -->
+	<!-- Message list limited to 500px. Then it becomes scrollable. -->
 	<div class='row'>
-		<div class='col-lg-9' id='messagesDiv' style='overflow: scroll; height: 400px'></div>
+		<div class='col-lg-9' id='messagesDiv' style='overflow: scroll; height: 500px'></div>
 	</div>
 
 
@@ -118,15 +118,37 @@
                 var avatarURL = $('#avatarURL').val()
                 var timestamp = Date.now()
 
+                // Check for youTube video link sharing
+                if (text.match(/(https{0,1}:\/\/(www\.)*?(youtube\.com\/watch\?v=|youtu\.be\/)(\w+))/)) {
+                    // Looks for both regular youTube and shortened URL versions
+
+                    var youTubeLink = RegExp.$1;
+
+                    var embedlyURL = "https://api.embedly.com/1/oembed?key=:1ba8ecc3b15b4c17b705ffc9721206b0&width=400&maxwidth=400&url="
+                    var embedlyYouTube = embedlyURL + youTubeLink
+                    var videoEmbedCode = ""
+
+                    $.ajax({
+                        url: encodeURI(embedlyYouTube),
+                        dataType: 'json',
+                        async: false,
+                        success: function(data) {
+                            videoEmbedCode = data.html
+                            text += "<br>" + videoEmbedCode
+                        }
+                    });
+
+                }
+
                 // Send the original message
                 chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
                 $('#messageInput').val('')
+
 
                 // Check for the @findhashtags plugin
                 if (text.match(/^@findhashtags\s+([\w ]+)/)) {
 
                     var tweetKeyword = RegExp.$1
-                    console.log("You are searching for: " + tweetKeyword)
 
                     $.getJSON( encodeURI("/process_tags_json.php?keyword=" + tweetKeyword), function( data ) {
 
