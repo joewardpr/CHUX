@@ -113,12 +113,48 @@
 		  // Firebase will throw a child_added event
 		  $('#messageInput').keypress(function (e) {
 		    if (e.keyCode == 13) {
-		      var name = $('#nameInput').val()
-		      var text = $('#messageInput').val()
-		      var avatarURL = $('#avatarURL').val()
-		      var timestamp = Date.now()
-		      chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
-		      $('#messageInput').val('')
+                var name = $('#nameInput').val()
+                var text = $('#messageInput').val()
+                var avatarURL = $('#avatarURL').val()
+                var timestamp = Date.now()
+
+                // Send the original message
+                chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
+                $('#messageInput').val('')
+
+                // Check for the @findhashtags plugin
+                if (text.match(/^@findhashtags\s+([\w ]+)/)) {
+
+                    var tweetKeyword = RegExp.$1
+                    console.log("You are searching for: " + tweetKeyword)
+
+                    $.getJSON( encodeURI("/process_tags_json.php?keyword=" + tweetKeyword), function( data ) {
+
+                        var hashtags = [];
+                        var hashtagsList = ''
+                        var numHashtags = 0
+                        $.each( data, function( key, val ) {
+
+                            // Only take the first 5 hashtags
+                            if (numHashtags < 5) {
+                                hashtagsList += '<button class="btn btn-primary btn-xs">#' + key + '</a>&nbsp;'
+                            }
+                            numHashtags += 1
+
+                        });
+
+                        // Hashtags are identified
+                        // Send them as a message
+                        var hashtagText = name + ' requested hashtags for: ' + tweetKeyword
+                        hashtagText += '.</br></br>' + hashtagsList
+                        timestamp = Date.now(); // Refresh the timestamp
+
+                        chatDB.child('messages').push({name: name, text: hashtagText, dateAdded: timestamp, avatarURL: avatarURL})
+
+                    });
+
+                }
+
 		    }
 		  })
 
