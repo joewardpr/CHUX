@@ -19,7 +19,7 @@
 
 <body>
 
-<div class='container'>
+<div class='container-fluid'>
 
 	<div class='row'>
 	<!--NAVBAR-->
@@ -31,7 +31,7 @@
 	</div>
 
 	<div class='row messageInputRow'>
-		<div class='col-lg-9'>
+		<div class='col-lg-10'>
 
 
 			<div id='chatBoxArea' style='display: none;'>
@@ -47,7 +47,7 @@
 		
 
 		</div>
-		<div class='col-lg-3' id='channelsList'>#channels</div>
+		<div class='col-lg-2' id='channelsList'>#channels</div>
 	</div>
 
 	<!-- Message list limited to 500px. Then it becomes scrollable. -->
@@ -235,22 +235,22 @@
 
 			var m = moment(theDate).fromNow()
 
-			msgRow = "<div class='row' style='margin-top: 16px'>"
+			msgRow = "<div class='row-fluid' style='margin-top: 16px'>"
 			msgRow += "<div class='col-sm-1 postAvatar'>"
 
 
 			msgRow += "<a href='#' data-toggle='tooltip' data-placement='right' title='" + name + "' class='steel-tooltip'><img class='postAvatar img-circle' src='" + avatarURL + "'></a>"
 			msgRow += "</div>"
-			msgRow += "<!--<div class='col-sm-1 postUsername'>"
-			msgRow += "<span class='label label-info'>" + name + "</span></div>-->"
-			msgRow += "<div class='col-sm-7 postText'>" + text + "</div>"
+			msgRow += "<!--<div class='col-sm-1 postUsername'>-->"
+			msgRow += "<!--<span class='label label-info'>" + name + "</span></div>-->"
+			msgRow += "<div class='col-sm-8 postText'>" + text + "</div>"
 			msgRow += "<div class='col-sm-2 postTimeText'>" + ' ' + m + "</div>"
 			msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLink +  "</div>"
 			msgRow += "</div>"
+            msgRow += "<div class='clearfix'></div>"
 
 			
-
-			$('<div/>').html(msgRow).prepend($('<em/>').html('')).appendTo($('#messagesDiv'))
+            $('#messagesDiv').append(msgRow)
 	        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
 
 	        // Must activate the tool tips each time the message list is updated
@@ -263,9 +263,9 @@
 	  }
 
 	})
-
-
 </script>
+
+</div>
 
 </body>
 </html>
