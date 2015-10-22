@@ -43,10 +43,10 @@
 <div class='row' id="navRow">
     <!--NAVBAR-->
     <div class="col-lg-12">
-        <div class='alertsBox'>10 New</div>
         <div class='channelIcon'>&nbsp;</div>
         <div class='usersIcon'>&nbsp;</div>
         <div class='loginStatusBox' id='loggedUser'>&nbsp;</div>
+        <div class='alertsBox'>10 New</div>
     </div>
 </div>
 
@@ -60,12 +60,14 @@
 
             <input type='hidden' id='nameInput'>
             <input type='hidden' id='avatarURL'>
-            <input class='messageInputBox' id='messageInput' placeholder='What is up?'>
+            <input class='messageInputBox' id='messageInput' placeholder="What's up?">
             <div style="height: 25px">&nbsp;</div>
         </div>
 
     </div>
-    <div class='col-lg-2' id='channelsList'>#channels</div>
+    <div class='col-lg-2' id='channelsList'>
+        <h3>#channels</h3>
+    </div>
 </div>
 
 <!-- Message list limited to 500px. Then it becomes scrollable. -->
@@ -138,8 +140,8 @@ if (chatDB.getAuth()){
     $('#messageInput').show()
     $('#channelsList').show()
     $('#messagesDiv').show()
-    $('#loggedUser').html('Logged in as @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
-    $('#loggedUser').html('<img class="img-circle" style="height: 24px" src="' +  twitterAvatarURL + '">' + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs"><i class="fa fa-sign-out"></i></a>')
+    //$('#loggedUser').html('Logged in as @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
+    $('#loggedUser').html('<img class="img-circle" style="height: 24px" src="' +  twitterAvatarURL + '">' + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
     $('#nameInput').val('@' + twitterUsername)
     $('#avatarURL').val(twitterAvatarURL)
 

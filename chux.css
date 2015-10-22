@@ -3,13 +3,15 @@ body {
 	/* Style for "Background" */
 	background-color: #ecf0f1;
 	margin-top: 24px;
+    margin-left: 75px;
+    margin-right: 75px;
 	font-family: "Helvetica Neue","Helvetica";
 	font-size: 16px;
 }
 
 div.loginStatusBox {
     margin-left: 30px;
-    width: 400px;
+    //width: 400px;
     height: 24px;
     line-height: 24px;
     display: inline-block;
@@ -30,7 +32,7 @@ div.alertsBox {
 }
 
 div.channelIcon {
-	margin-left: 30px;
+	//margin-left: 30px;
 	background-image: url("img/channel-alerts-icon.png");
 	width: 24px;
 	height: 24px;
@@ -98,6 +100,11 @@ div.messageInputRow {
 	height: 48px;
 }
 
+
+.icon-red {
+    color: orangered;
+    margin-left: 15px;
+}
 
 //.tooltip-arrow,
 //.steel-tooltip + .tooltip > .tooltip-inner {background-color: #34495e;}
