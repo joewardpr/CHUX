@@ -67,6 +67,9 @@
     </div>
     <div class='col-lg-2' id='channelsList'>
         <h3>#channels</h3>
+        <div id="listChannels"></div>
+        <h3>#users</h3>
+        <div id="listUsers"></div>
     </div>
 </div>
 
@@ -135,6 +138,10 @@ if (chatDB.getAuth()){
     twitterUsername = authData.twitter.username
     twitterAvatarURL = authData.twitter.profileImageURL
 
+    var timestamp = Date.now()
+
+    chatDB.child('loggedUsers').child(twitterUsername).update({ avatarURL: twitterAvatarURL, dateAdded: timestamp })
+
     $('#navRow').show()
     $('#chatBoxArea').show()
     $('#messageInput').show()
@@ -152,7 +159,6 @@ else {
     $('#chatLogin').modal('show')
 }
 
-
 // Update the chat message list when a new message is added
 // The data will contain the new message only
 chatDB.child('messages').on('child_added', function(data) {
@@ -160,6 +166,22 @@ chatDB.child('messages').on('child_added', function(data) {
     var message = data.val()
     var messageKey = data.key()
     displayChatMessage(message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
+
+})
+
+now = Date.now() - 900 // 15 minutes ago
+
+// Display new users logging on
+chatDB.child('loggedUsers').on('child_added', function(data) {
+
+    var key = data.key()
+    var timestamp = data.val().dateAdded
+    var avatarURL = data.val().avatarURL
+
+    $('#listUsers').append("<a href='#' data-toggle='tooltip' data-placement='top' title='" + key + "' class='steel-tooltip'><img class='postAvatar img-circle' style='margin: 3px' src='" + avatarURL + "'></a>");
+
+    // Have to renable the tooltips because this content gets added after the page loads
+    $("[data-toggle='tooltip']").tooltip();
 
 })
 
