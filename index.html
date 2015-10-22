@@ -178,7 +178,7 @@ chatDB.child('loggedUsers').on('child_added', function(data) {
     var timestamp = data.val().dateAdded
     var avatarURL = data.val().avatarURL
 
-    $('#listUsers').append("<a href='#' data-toggle='tooltip' data-placement='top' title='" + key + "' class='steel-tooltip'><img class='postAvatar img-circle' style='margin: 3px' src='" + avatarURL + "'></a>");
+    $('#listUsers').append("<a href='#' data-toggle='tooltip' data-placement='top' title='" + key + "' class='steel-tooltip'><img class='postAvatarLogged activeAvatar img-circle' src='" + avatarURL + "'></a>");
 
     // Have to renable the tooltips because this content gets added after the page loads
     $("[data-toggle='tooltip']").tooltip();
