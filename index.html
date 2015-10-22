@@ -2,18 +2,18 @@
 <html>
 <head>
 
-	<title>CHUX: Chat App Demo</title>
+    <title>CHUX: Chat App Demo</title>
 
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
-	<link rel="stylesheet" href="chux.css">
+    <link rel="stylesheet" href="chux.css">
 
-	<script src="moment.min.js"></script>
-	
-	<script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
-	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>	
+    <script src="moment.min.js"></script>
+
+    <script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 
 </head>
 
@@ -21,248 +21,292 @@
 
 <div class='container-fluid'>
 
-	<div class='row'>
-	<!--NAVBAR-->
-		<div class="col-lg-12">
-			<div class='alertsBox'>10 New</div>
-			<div class='channelIcon'>&nbsp;</div>
-			<div class='usersIcon'>&nbsp;</div>
-		</div>
-	</div>
+<div class="row"><div class="col-lg-12">
 
-	<div class='row messageInputRow'>
-		<div class='col-lg-10'>
+    <!-- Modal -->
+    <div class="modal fade" id="chatLogin" tabindex="-1" role="dialog" aria-labelledby="chatLoginLabel">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id=chatLoginLabel">Login with Twitter</h4>
+                </div>
+                <div class="modal-body text-center">
+                    <a id='twitterLoginButton' href="javascript:login('twitter')"><i class="fa fa-twitter-square fa-5x"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div></div>
+
+<div class='row' id="navRow">
+    <!--NAVBAR-->
+    <div class="col-lg-12">
+        <div class='alertsBox'>10 New</div>
+        <div class='channelIcon'>&nbsp;</div>
+        <div class='usersIcon'>&nbsp;</div>
+        <div class='loginStatusBox' id='loggedUser'>&nbsp;</div>
+    </div>
+</div>
+
+<div class='row messageInputRow'>
+    <div class='col-lg-10'>
 
 
-			<div id='chatBoxArea' style='display: none;'>
-				<div id='loggedUser'></div>
-				<div>&nbsp;</div>
-				
+        <div id='chatBoxArea' style='display: none;'>
 
-				<input type='hidden' id='nameInput'>
-				<input type='hidden' id='avatarURL'>
-				<input class='messageInputBox' id='messageInput' placeholder='What is up?'>
-			</div>
+            <div>&nbsp;</div>
 
-		
+            <input type='hidden' id='nameInput'>
+            <input type='hidden' id='avatarURL'>
+            <input class='messageInputBox' id='messageInput' placeholder='What is up?'>
+            <div style="height: 25px">&nbsp;</div>
+        </div>
 
-		</div>
-		<div class='col-lg-2' id='channelsList'>#channels</div>
-	</div>
+    </div>
+    <div class='col-lg-2' id='channelsList'>#channels</div>
+</div>
 
-	<!-- Message list limited to 500px. Then it becomes scrollable. -->
-	<div class='row'>
-		<div class='col-lg-9' id='messagesDiv' style='overflow: scroll; height: 500px'></div>
-	</div>
+<!-- Message list limited to 500px. Then it becomes scrollable. -->
+<div class='row'>
+    <div class='col-lg-9' id='messagesDiv' style='overflow: scroll; height: 500px'></div>
+</div>
 
 
 
 <script>
 
-	function deleteChatMessage(postid) {
-		chatDB.child('messages').child(postid).remove()
-	}  
+var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
 
-	function logout(){
-		chatDB.unauth()
-		$('#messagesDiv').html('')
-		$('#loggedUser').html('<a href="/" role="button" class="btn btn-primary btn-xs">Login with Twitter</a>')
-		$('#messageInput').hide()
-		$('#channelsList').hide()
+function initChat() {
 
-	}
+    $('#messagesDiv').hide()
+    $('#messageInput').hide()
+    $('#channelsList').hide()
+    $('#chatBoxArea').hide()
+    $('#navRow').hide()
+}
 
-	var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
+function logout(){
+    chatDB.unauth()
 
-	// Testing authentication with Twitter
-	chatDB.authWithOAuthPopup("twitter", function(error, authData) {
-	  
-	  if (error) {
-	  	console.log("Login Failed!", error)
+    initChat()
 
-	  } else {
-	    console.log("Authenticated successfully with payload:", authData)
+    // We'll just refresh the page when they logout (for now)
+    location.reload()
+}
 
-		if (chatDB.getAuth()){
-			console.log("User is authenticated")
-			// Show the main chat area
-			$('#chatBoxArea').show()
-		}
-		else {
-			console.log("User is not authenticated")
-			// Hide the main chat area
-			$('#chatBoxArea').hide()
-		}
+var loggedIn = false;
+var twitterUsername;
+var twitterAvatarURL;
 
-	      twitterUsername = authData.twitter.username
-	      twitterAvatarURL = authData.twitter.profileImageURL
+function login(socialnetwork) {
 
-	      $('#loggedUser').html('Logged in as @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
+    $('#chatLogin').modal('hide')
 
-	      $('#nameInput').val('@' + twitterUsername)
-	      $('#avatarURL').val(twitterAvatarURL)
+    chatDB.authWithOAuthPopup("twitter", function(error, authData) {
 
-	      // Display the current logged in user's avatar in the input box
-	      $('#messageInput').css('background-image', 'url(' + twitterAvatarURL + ')').css('background-size','24px 24px');
+        if (error) {
+
+        } else {
+            loggedIn = true;
+            // We'll just refresh the page when they logout (for now)
+            location.reload()
+        }
+    });
+}
+
+function deleteChatMessage(postid) {
+    chatDB.child('messages').child(postid).remove()
+}
+
+initChat()
+
+// Are we already logged in?
+if (chatDB.getAuth()){
+
+    authData = chatDB.getAuth()
+
+    loggedIn = true
+
+    twitterUsername = authData.twitter.username
+    twitterAvatarURL = authData.twitter.profileImageURL
+
+    $('#navRow').show()
+    $('#chatBoxArea').show()
+    $('#messageInput').show()
+    $('#channelsList').show()
+    $('#messagesDiv').show()
+    $('#loggedUser').html('Logged in as @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
+    $('#loggedUser').html('<img class="img-circle" style="height: 24px" src="' +  twitterAvatarURL + '">' + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs"><i class="fa fa-sign-out"></i></a>')
+    $('#nameInput').val('@' + twitterUsername)
+    $('#avatarURL').val(twitterAvatarURL)
+
+    // Display the current logged in user's avatar in the input box
+    $('#messageInput').css('background-image', 'url(' + twitterAvatarURL + ')').css('background-size','24px 24px');
+}
+else {
+    $('#chatLogin').modal('show')
+}
 
 
+// Update the chat message list when a new message is added
+// The data will contain the new message only
+chatDB.child('messages').on('child_added', function(data) {
 
-		  // Listen for the ENTER key.
-		  // When hit, get user name and message
-		  // Add it to Firebase
-		  // Firebase will throw a child_added event
-		  $('#messageInput').keypress(function (e) {
-		    if (e.keyCode == 13) {
-                var name = $('#nameInput').val()
-                var text = $('#messageInput').val()
-                var avatarURL = $('#avatarURL').val()
-                var timestamp = Date.now()
+    var message = data.val()
+    var messageKey = data.key()
+    displayChatMessage(message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
 
-                // Check for youTube video link sharing
-                if (text.match(/(https{0,1}:\/\/(www\.)*?(youtube\.com\/watch\?v=|youtu\.be\/)(\w+))/)) {
-                    // Looks for both regular youTube and shortened URL versions
+})
 
-                    var youTubeLink = RegExp.$1;
+// Update the chat message list when a post is deleted.
+// The data will contain only the deleted post.
+// We will get all the post data to redisplay the list.
+//
+// Note: Another method would be to use Jquery to find and selective remove only
+// the deleted post from the list (without updating the entire list)
+chatDB.child('messages').on('child_removed', function(data) {
 
-                    var embedlyURL = "https://api.embedly.com/1/oembed?key=:1ba8ecc3b15b4c17b705ffc9721206b0&width=400&maxwidth=400&url="
-                    var embedlyYouTube = embedlyURL + youTubeLink
-                    var videoEmbedCode = ""
+    chatDB.once('value', function (data) {
 
-                    $.ajax({
-                        url: encodeURI(embedlyYouTube),
-                        dataType: 'json',
-                        async: false,
-                        success: function(data) {
-                            videoEmbedCode = data.html
-                            text += "<br>" + videoEmbedCode
-                        }
-                    });
+        $('#messagesDiv').html('') // Clear the current messages
+        if (data.val() !== null) {
 
+            var messages = data.val().messages
+
+            $.each(messages, function(key, msg) {
+                displayChatMessage(msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
+            })
+        }
+
+    })
+})
+
+// This listener will run every time a change is made to the data
+chatDB.child('messages').on('value', function(data) {
+    // Placeholder; TBD
+})
+
+// Add a single message to the list (div) by appending it to current data.
+// It scrolls the page to the last message.
+function displayChatMessage(name, text, avatarURL, dateAdded, postid) {
+
+    if (!loggedIn) {
+        return;
+    }
+
+    if (postid) {
+        //var deleteLink = '[<a href="' + postid + '">x</a>]'
+        var deleteLink = '<a href="javascript:deleteChatMessage(\'' + postid + '\');"><span class="glyphicon glyphicon-remove"></span></a>'
+    }
+    else{
+        var deleteLink = ''
+    }
+
+    var theDate = new Date(dateAdded);
+    dateString = theDate.toGMTString();
+
+    var m = moment(theDate).fromNow()
+
+    msgRow = "<div class='row-fluid' style='margin-top: 16px'>"
+    msgRow += "<div class='col-sm-1 postAvatar'>"
+
+
+    msgRow += "<a href='#' data-toggle='tooltip' data-placement='right' title='" + name + "' class='steel-tooltip'><img class='postAvatar img-circle' src='" + avatarURL + "'></a>"
+    msgRow += "</div>"
+    msgRow += "<!--<div class='col-sm-1 postUsername'>-->"
+    msgRow += "<!--<span class='label label-info'>" + name + "</span></div>-->"
+    msgRow += "<div class='col-sm-8 postText'>" + text + "</div>"
+    msgRow += "<div class='col-sm-2 postTimeText'>" + ' ' + m + "</div>"
+    msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLink +  "</div>"
+    msgRow += "</div>"
+    msgRow += "<div class='clearfix'></div>"
+
+
+    $('#messagesDiv').append(msgRow)
+    $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
+
+    // Must activate the tool tips each time the message list is updated
+    $(function () {
+        $("[data-toggle='tooltip']").tooltip();
+    });
+}
+
+// Listen for the ENTER key.
+// When hit, get user name and message
+// Add it to Firebase
+// Firebase will throw a child_added event
+$('#messageInput').keypress(function (e) {
+    if (e.keyCode == 13) {
+        var name = $('#nameInput').val()
+        var text = $('#messageInput').val()
+        var avatarURL = $('#avatarURL').val()
+        var timestamp = Date.now()
+
+        // Check for youTube video link sharing
+        if (text.match(/(https{0,1}:\/\/(www\.)*?(youtube\.com\/watch\?v=|youtu\.be\/)(\w+))/)) {
+            // Looks for both regular youTube and shortened URL versions
+
+            var youTubeLink = RegExp.$1;
+
+            var embedlyURL = "https://api.embedly.com/1/oembed?key=:1ba8ecc3b15b4c17b705ffc9721206b0&width=400&maxwidth=400&url="
+            var embedlyYouTube = embedlyURL + youTubeLink
+            var videoEmbedCode = ""
+
+            $.ajax({
+                url: encodeURI(embedlyYouTube),
+                dataType: 'json',
+                async: false,
+                success: function(data) {
+                    videoEmbedCode = data.html
+                    text += "<br>" + videoEmbedCode
                 }
+            });
 
-                // Send the original message
-                chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
-                $('#messageInput').val('')
+        }
 
-
-                // Check for the @findhashtags plugin
-                if (text.match(/^@findhashtags\s+([\w ]+)/)) {
-
-                    var tweetKeyword = RegExp.$1
-
-                    $.getJSON( encodeURI("/process_tags_json.php?keyword=" + tweetKeyword), function( data ) {
-
-                        var hashtags = [];
-                        var hashtagsList = ''
-                        var numHashtags = 0
-                        $.each( data, function( key, val ) {
-
-                            // Only take the first 5 hashtags
-                            if (numHashtags < 5) {
-                                hashtagsList += '<button class="btn btn-primary btn-xs">#' + key + '</a>&nbsp;'
-                            }
-                            numHashtags += 1
-
-                        });
-
-                        // Hashtags are identified
-                        // Send them as a message
-                        var hashtagText = name + ' requested hashtags for: ' + tweetKeyword
-                        hashtagText += '.</br></br>' + hashtagsList
-                        timestamp = Date.now(); // Refresh the timestamp
-
-                        chatDB.child('messages').push({name: name, text: hashtagText, dateAdded: timestamp, avatarURL: avatarURL})
-
-                    });
-
-                }
-
-		    }
-		  })
-
-		  // Update the chat message list when a new message is added
-		  // The data will contain the new message only
-		  chatDB.child('messages').on('child_added', function(data) {
-
-		    var message = data.val()
-		    var messageKey = data.key()
-		    displayChatMessage(message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
-
-		  })
-
-	      // Update the chat message list when a post is deleted.
-	      // The data will contain only the deleted post.
-	      // We will get all the post data to redisplay the list.
-	      //
-	      // Note: Another method would be to use Jquery to find and selective remove only
-	      // the deleted post from the list (without updating the entire list)
-	      chatDB.child('messages').on('child_removed', function(data) {
-
-	      	chatDB.once('value', function (data) {
-
-				$('#messagesDiv').html('') // Clear the current messages
-	      		if (data.val() !== null) {
-	      		
-					var messages = data.val().messages
-
-					$.each(messages, function(key, msg) {
-						displayChatMessage(msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
-					})
-				}
-
-	      	})
-	      })
-
-	      // This listener will run everytime a change is made to the data
-	      chatDB.child('messages').on('value', function(data) {
-	      	// Placeholder; TBD
-	      })
-
-	      // Add a single message to the list (div) by appending it to current data.
-	      // It scrolls the page to the last message.
-	      function displayChatMessage(name, text, avatarURL, dateAdded, postid) {
-	        
-			if (postid) {
-			    //var deleteLink = '[<a href="' + postid + '">x</a>]'
-			    var deleteLink = '<a href="javascript:deleteChatMessage(\'' + postid + '\');"><span class="glyphicon glyphicon-remove"></span></a>'
-			}
-			else{
-				var deleteLink = ''
-			}
-
-			var theDate = new Date(dateAdded);
-			dateString = theDate.toGMTString();
-
-			var m = moment(theDate).fromNow()
-
-			msgRow = "<div class='row-fluid' style='margin-top: 16px'>"
-			msgRow += "<div class='col-sm-1 postAvatar'>"
+        // Send the original message
+        chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
+        $('#messageInput').val('')
 
 
-			msgRow += "<a href='#' data-toggle='tooltip' data-placement='right' title='" + name + "' class='steel-tooltip'><img class='postAvatar img-circle' src='" + avatarURL + "'></a>"
-			msgRow += "</div>"
-			msgRow += "<!--<div class='col-sm-1 postUsername'>-->"
-			msgRow += "<!--<span class='label label-info'>" + name + "</span></div>-->"
-			msgRow += "<div class='col-sm-8 postText'>" + text + "</div>"
-			msgRow += "<div class='col-sm-2 postTimeText'>" + ' ' + m + "</div>"
-			msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLink +  "</div>"
-			msgRow += "</div>"
-            msgRow += "<div class='clearfix'></div>"
+        // Check for the @findhashtags plugin
+        if (text.match(/^@findhashtags\s+([\w ]+)/)) {
 
-			
-            $('#messagesDiv').append(msgRow)
-	        $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
+            var tweetKeyword = RegExp.$1
 
-	        // Must activate the tool tips each time the message list is updated
-	        $(function () {
-        		$("[data-toggle='tooltip']").tooltip();
-    		});
-	      }
+            $.getJSON( encodeURI("/process_tags_json.php?keyword=" + tweetKeyword), function( data ) {
 
+                var hashtags = [];
+                var hashtagsList = ''
+                var numHashtags = 0
+                $.each( data, function( key, val ) {
 
-	  }
+                    // Only take the first 5 hashtags
+                    if (numHashtags < 5) {
+                        hashtagsList += '<button class="btn btn-primary btn-xs">#' + key + '</a>&nbsp;'
+                    }
+                    numHashtags += 1
 
-	})
+                });
+
+                // Hashtags are identified
+                // Send them as a message
+                var hashtagText = name + ' requested hashtags for: ' + tweetKeyword
+                hashtagText += '.</br></br>' + hashtagsList
+                timestamp = Date.now(); // Refresh the timestamp
+
+                chatDB.child('messages').push({name: name, text: hashtagText, dateAdded: timestamp, avatarURL: avatarURL})
+
+            });
+        }
+
+    }
+
+})
+
 </script>
 
 </div>

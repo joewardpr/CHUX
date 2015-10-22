@@ -7,6 +7,13 @@ body {
 	font-size: 16px;
 }
 
+div.loginStatusBox {
+    margin-left: 30px;
+    width: 400px;
+    height: 24px;
+    line-height: 24px;
+    display: inline-block;
+}
 
 div.alertsBox {
 	width: 100px;
@@ -92,6 +99,6 @@ div.messageInputRow {
 }
 
 
-.tooltip-arrow,
-.steel-tooltip + .tooltip > .tooltip-inner {background-color: #34495e;}
+//.tooltip-arrow,
+//.steel-tooltip + .tooltip > .tooltip-inner {background-color: #34495e;}
 
