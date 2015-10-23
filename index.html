@@ -23,7 +23,7 @@
 
 <div class="row"><div class="col-lg-12">
 
-    <!-- Modal -->
+    <!-- Modal: Social Login -->
     <div class="modal fade" id="chatLogin" tabindex="-1" role="dialog" aria-labelledby="chatLoginLabel">
         <div class="modal-dialog modal-sm" role="document">
             <div class="modal-content">
@@ -37,6 +37,39 @@
             </div>
         </div>
     </div>
+    <!-- End Modal -->
+
+    <!-- Modal: Add New Channel-->
+    <div class="modal fade" id="addNewChannel" tabindex="-1" role="dialog" aria-labelledby="addNewChannelLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id=addNewChannelnLabel">Add New Channel</h4>
+                </div>
+                <div class="modal-body">
+                        <div class="row">
+                            <div class="col-lg-12" style="padding-bottom: 5px">
+                                <div id="newChannelError" class="alert alert-warning" style="display: none" role="alert"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-1">
+                                &nbsp;
+                            </div>
+                            <div class="col-lg-11">
+                                <input class='channelInputBox' id="channelName" placeholder="What's your new channel name?">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="addChannelButton" type="button" class="btn btn-primary" onClick="javascript:addNewChannel($('#channelName').val())">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Modal -->
 
 </div></div>
 
@@ -51,8 +84,12 @@
 </div>
 
 <div class='row messageInputRow'>
-    <div class='col-lg-10'>
+    <div class='col-lg-8'>
 
+        <!-- Message list limited to 500px. Then it becomes scrollable. -->
+        <div class='row'>
+            <div class='col-lg-12 messagesListArea' id='messagesDiv'></div>
+        </div>
 
         <div id='chatBoxArea' style='display: none;'>
 
@@ -65,22 +102,39 @@
         </div>
 
     </div>
-    <div class='col-lg-2' id='channelsList'>
-        <h3>#channels</h3>
+    <div class="col-lg-1">
+        &nbsp;
+    </div>
+    <div class='col-lg-3' id='channelsList'>
+        <!--<h3 class="sideColHeadings">#channels</h3>-->
         <div id="listChannels"></div>
-        <h3>#users</h3>
+        <div class="row">
+            <div class="col-lg-12">
+                <img src="/img/icon-show-all-channels.png">
+                <a class='sideColLinks' href="javascript: $('#addNewChannel').modal('show')">Add new channel</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">&nbsp;</div>
+        </div>
+        <!--<h3 class="sideColHeadings">#users</h3>-->
         <div id="listUsers"></div>
     </div>
 </div>
 
-<!-- Message list limited to 500px. Then it becomes scrollable. -->
-<div class='row'>
-    <div class='col-lg-9' id='messagesDiv' style='overflow: scroll; height: 500px'></div>
-</div>
-
-
-
 <script>
+
+// Give focus to the input box when the modal loads
+$('#addNewChannel').on('shown.bs.modal', function () {
+    $('#channelName').focus();
+})
+
+// Submit the new channel form when you click ENTER
+$('#channelName').keypress(function(e){
+    if(e.which == 13){//Enter key pressed
+        $('#addChannelButton').click();//Trigger search button click event
+    }
+});
 
 var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
 
@@ -120,6 +174,44 @@ function login(socialnetwork) {
             location.reload()
         }
     });
+}
+
+function addNewChannel(channelName) {
+
+    channelName = channelName.replace(/^\s+/,"") // Leading white space turns into nothing
+    channelName = channelName.replace(/\s+$/,"") // Trailing white space turns into nothing
+    channelName = channelName.replace(/[^\w]+/g, "-") // Get rid of funky stuff
+    channelName = channelName.replace(/^\s+/,"") // Leading dashes removed
+    channelName = channelName.replace(/\s+$/,"") // Trailing dashes removed
+
+    if (channelName.length == 0) {
+        $('#newChannelError').html("You must enter a channel name, duh!")
+        $('#newChannelError').show()
+        return
+    }
+    else if (channelName.length > 20) {
+        $('#newChannelError').html("Shorter amigo! Less characters saves a digital tree.")
+        $('#newChannelError').show()
+        $('#channelName').attr("placeholder", "What's your *shorter* channel name?")
+        $('#channelName').val("")
+        return
+    }
+    else {
+        // They entered a channel name.
+        // We'll get rid of non-alphanumeric characters, replacing them with dashes (same with spaces)
+
+        channelName = channelName.toLowerCase(); // Lowercase only
+
+        // Now push it into the channels node
+        chatDB.child('channels').child(channelName).update({ active: true })
+
+        // Now clear and close the modal
+        $('#newChannelError').html("")
+        $('#channelName').val("")
+        $('#addNewChannel').modal('hide')
+
+
+    }
 }
 
 function deleteChatMessage(postid) {
@@ -182,6 +274,14 @@ chatDB.child('loggedUsers').on('child_added', function(data) {
 
     // Have to renable the tooltips because this content gets added after the page loads
     $("[data-toggle='tooltip']").tooltip();
+
+})
+
+chatDB.child('channels').on('child_added', function(data) {
+
+    var channelName = data.key()
+
+    $('#listChannels').append("<div class='row'><div class='col-lg-11'><img src='/img/fav-icon.png'> <a class='channelLink' href=''>#" + channelName + "</a></div></div>");
 
 })
 
