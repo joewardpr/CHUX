@@ -85,7 +85,8 @@
 
 <div class="row">
     <div id="channelTitle" class="col-bg-12 titleRow" style="display:none">
-        <span class="titleChannelText">You're chatting in <span class="titleChannelHighlight">#Welcome</span></span>
+        <span class="titleChannelText">You're chatting in <span id = "titleChannelText" class="titleChannelHighlight">#Welcome</span></span>
+        <input type="hidden" id="hiddenChannelName" value='welcome'>
     </div>
 </div>
 
@@ -185,6 +186,13 @@ function login(socialnetwork) {
             location.reload()
         }
     });
+}
+
+function changeChannel(channelName) {
+    
+    $('#titleChannelText').html("#" + channelName)
+    $("#hiddenChannelName").val(channelName)
+
 }
 
 function addNewChannel(channelName) {
@@ -293,7 +301,7 @@ chatDB.child('channels').on('child_added', function(data) {
 
     var channelName = data.key()
 
-    $('#listChannels').append("<div class='row'><div class='col-lg-11'><img src='/img/channel-icon-off.png'> <a class='channelLink' href=''>#" + channelName + "</a></div></div>");
+    $('#listChannels').append("<div class='row'><div class='col-lg-11'><img src='/img/channel-icon-off.png'> <a class='channelLink' href='javascript:changeChannel(\"" + channelName + "\")'>#" + channelName + "</a></div></div>");
 
 })
 
@@ -332,6 +340,9 @@ function displayChatMessage(name, text, avatarURL, dateAdded, postid) {
     if (!loggedIn) {
         return;
     }
+
+    // We might need to switch to a new Firebase resource for the sub-channel
+    //chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
 
     if (postid) {
         //var deleteLink = '[<a href="' + postid + '">x</a>]'
