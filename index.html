@@ -281,7 +281,7 @@ chatDB.child('channels').on('child_added', function(data) {
 
     var channelName = data.key()
 
-    $('#listChannels').append("<div class='row'><div class='col-lg-11'><img src='/img/fav-icon.png'> <a class='channelLink' href=''>#" + channelName + "</a></div></div>");
+    $('#listChannels').append("<div class='row'><div class='col-lg-11'><img src='/img/channel-icon-off.png'> <a class='channelLink' href=''>#" + channelName + "</a></div></div>");
 
 })
 
