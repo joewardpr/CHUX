@@ -147,7 +147,9 @@ $('#channelName').keypress(function(e){
     }
 });
 
+console.log("Creating two firebase resources: chatDB and channelDB")
 var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
+var channelDB = new Firebase('https://intense-torch-4337.firebaseio.com/Channel_Posts/welcome/')
 
 function initChat() {
 
@@ -157,6 +159,9 @@ function initChat() {
     $('#chatBoxArea').hide()
     $('#navRow').hide()
     $('#channelTitle').hide()
+    changeChannel("welcome") // We start out on the welcome channel
+
+    console.log('Initializing chat, and changing to welcome channel')
 }
 
 function logout(){
@@ -188,10 +193,51 @@ function login(socialnetwork) {
     });
 }
 
+function deleteChatMessage(channelName, postid) {
+    chatDB.child('Channel_Posts').child(channelName).child('messages').child(postid).remove()
+    console.log("Deleting a message from channel (deleteChatMessage): " + channelName)
+}
+
 function changeChannel(channelName) {
     
     $('#titleChannelText').html("#" + channelName)
-    $("#hiddenChannelName").val(channelName)
+    $('#hiddenChannelName').val(channelName)
+
+    var channelDB = new Firebase('https://intense-torch-4337.firebaseio.com/Channel_Posts/' + channelName + '/')
+
+
+    // Clear the message content. We'll be displaying the new channel
+    $('#messagesDiv').empty()
+
+    // We have to add the listener each time we switch channels
+    // Do we have to destroy the previous listener? TBD
+    channelDB.child('messages').off('child_added')
+    channelDB.child('messages').on('child_added', function(data) {
+        displayChannelMessages(data)
+    })
+
+    //channelDB.child('messages').off('child_removed')
+    channelDB.child('messages').on('child_removed', function(data) {
+
+        channelDB.once('value', function (data) {
+
+            $('#messagesDiv').html('') // Clear the current messages
+            if (data.val() !== null) {
+
+                var messages = data.val().messages
+
+                $.each(messages, function(key, msg) {
+                    displayChatMessage(channelName, msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
+                })
+            }
+
+        })
+    })
+
+
+
+
+    console.log("Changing channel to: " + channelName)
 
 }
 
@@ -229,13 +275,13 @@ function addNewChannel(channelName) {
         $('#channelName').val("")
         $('#addNewChannel').modal('hide')
 
+        changeChannel(channelName)
 
     }
+    console.log("Adding a new channel")
 }
 
-function deleteChatMessage(postid) {
-    chatDB.child('messages').child(postid).remove()
-}
+
 
 initChat()
 
@@ -271,15 +317,27 @@ else {
     $('#chatLogin').modal('show')
 }
 
-// Update the chat message list when a new message is added
-// The data will contain the new message only
-chatDB.child('messages').on('child_added', function(data) {
 
+function displayChannelMessages(data) {
     var message = data.val()
     var messageKey = data.key()
-    displayChatMessage(message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
 
-})
+    console.log("We are calling displayChannelMessages with: " + message.text)
+
+    var c = $('#hiddenChannelName').val() // We need to know the channel to delete messages
+
+    console.log("Displaying a channel message (inside displayChannelMessages")
+
+    displayChatMessage(c,message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
+}
+
+// Update the chat message list when a new message is added
+// The data will contain the new message only
+// channelDB.child('messages').on('child_added', function(data) {
+//     displayChannelMessages(data)
+// })
+
+
 
 now = Date.now() - 900 // 15 minutes ago
 
@@ -311,42 +369,44 @@ chatDB.child('channels').on('child_added', function(data) {
 //
 // Note: Another method would be to use Jquery to find and selective remove only
 // the deleted post from the list (without updating the entire list)
-chatDB.child('messages').on('child_removed', function(data) {
+// chatDB.child('messages').on('child_removed', function(data) {
 
-    chatDB.once('value', function (data) {
+//     chatDB.once('value', function (data) {
 
-        $('#messagesDiv').html('') // Clear the current messages
-        if (data.val() !== null) {
+//         $('#messagesDiv').html('') // Clear the current messages
+//         if (data.val() !== null) {
 
-            var messages = data.val().messages
+//             var messages = data.val().messages
 
-            $.each(messages, function(key, msg) {
-                displayChatMessage(msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
-            })
-        }
+//             $.each(messages, function(key, msg) {
+//                 displayChatMessage(msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
+//             })
+//         }
 
-    })
-})
+//     })
+// })
 
 // This listener will run every time a change is made to the data
-chatDB.child('messages').on('value', function(data) {
-    // Placeholder; TBD
-})
+// chatDB.child('messages').on('value', function(data) {
+//     // Placeholder; TBD
+// })
 
 // Add a single message to the list (div) by appending it to current data.
 // It scrolls the page to the last message.
-function displayChatMessage(name, text, avatarURL, dateAdded, postid) {
+function displayChatMessage(channelName, name, text, avatarURL, dateAdded, postid) {
 
     if (!loggedIn) {
         return;
     }
+
+    console.log("We are in displayChatMessage for: " + text)
 
     // We might need to switch to a new Firebase resource for the sub-channel
     //chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
 
     if (postid) {
         //var deleteLink = '[<a href="' + postid + '">x</a>]'
-        var deleteLink = '<a href="javascript:deleteChatMessage(\'' + postid + '\');"><span class="glyphicon glyphicon-remove"></span></a>'
+        var deleteLink = '<a href="javascript:deleteChatMessage(\'' + channelName + '\',\'' + postid + '\');"><span class="glyphicon glyphicon-remove"></span></a>'
     }
     else{
         var deleteLink = ''
@@ -367,7 +427,24 @@ function displayChatMessage(name, text, avatarURL, dateAdded, postid) {
     msgRow += "<!--<span class='label label-info'>" + name + "</span></div>-->"
     msgRow += "<div class='col-sm-8 postText'>" + text + "</div>"
     msgRow += "<div class='col-sm-2 postTimeText'>" + ' ' + m + "</div>"
-    msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLink +  "</div>"
+   
+
+
+    deleteLinkOn = "" // Only displaying delete icons for our own tweets or superuser (joewardpr)
+    var tUser = "@" + twitterUsername
+
+    console.log("Twitter username is: " + tUser)
+    console.log("Username for poster is: " + name)
+
+    if (tUser == name || tUser == "@joewardpr" ){
+        deleteLinkOn = deleteLink
+        console.log("Turning the delete link on for: " + name + "'s post.")
+    }
+    {
+        console.log("It is insisting these are not equivalent: " + tUser + " and " + name)
+    }
+    msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLinkOn +  "</div>"
+    
     msgRow += "</div>"
     msgRow += "<div class='clearfix'></div>"
 
@@ -390,6 +467,9 @@ $('#messageInput').keypress(function (e) {
         var name = $('#nameInput').val()
         var text = $('#messageInput').val()
         var avatarURL = $('#avatarURL').val()
+
+        var channelName = $('#hiddenChannelName').val()
+
         var timestamp = Date.now()
 
         // Check for youTube video link sharing
@@ -415,7 +495,7 @@ $('#messageInput').keypress(function (e) {
         }
 
         // Send the original message
-        chatDB.child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
+        chatDB.child("Channel_Posts").child(channelName).child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
         $('#messageInput').val('')
 
 
@@ -445,7 +525,7 @@ $('#messageInput').keypress(function (e) {
                 hashtagText += '.</br></br>' + hashtagsList
                 timestamp = Date.now(); // Refresh the timestamp
 
-                chatDB.child('messages').push({name: name, text: hashtagText, dateAdded: timestamp, avatarURL: avatarURL})
+                chatDB.child('Channel_Posts').child(channelName).child('messages').push({name: name, text: hashtagText, dateAdded: timestamp, avatarURL: avatarURL})
 
             });
         }
