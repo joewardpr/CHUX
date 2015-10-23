@@ -150,6 +150,33 @@ div.messageInputRow {
     line-height: 18px;
 }
 
+.titleChannelText {
+    font-family: "Helvetica Neue", "Helvetica";
+    color: rgba(134, 134, 134, 0.7);
+    font-size: 24px;
+    font-weight: 100;
+    margin-left: 10px;
+}
+
+.titleChannelHighlight {
+    font-family: "Helvetica Neue", "Helvetica";
+    color: rgba(134, 134, 134, 0.9);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.titleRow {
+    background-color: rgba(134, 134, 134, 0.3);
+    color: #9b9b9b;
+    margin-top: 15px;
+    padding: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    border-style: dashed;
+    border-width: 1px;
+
+}
+
 //.tooltip-arrow,
 //.steel-tooltip + .tooltip > .tooltip-inner {background-color: #34495e;}
 
