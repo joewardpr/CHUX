@@ -90,6 +90,12 @@
 </div>
 
 <div class="row">
+    <div class='col-lg-6' style="margin-top: 15px; margin-bottom: -25px" id="titleAlertRow"></div>
+    <div class='col-lg-6' style="height: 75px; margin-top: 15px; margin-bottom: -25px">&nbsp;</div>
+</div>
+
+
+<div class="row">
     <div id="channelTitle" class="col-bg-12 titleRow" style="display:none">
         <span class="titleChannelText">You're chatting in <span id = "titleChannelText" class="titleChannelHighlight">#Welcome</span></span>
         <input type="hidden" id="hiddenChannelName" value='welcome'>
@@ -97,7 +103,7 @@
 </div>
 
 <div class='row messageInputRow'>
-    <div class='col-lg-8'>
+    <div class='col-lg-9'>
 
 
 
@@ -110,7 +116,7 @@
     <div class="col-lg-1">
         &nbsp;
     </div>
-    <div class='col-lg-3' id='channelsList'>
+    <div class='col-lg-2' id='channelsList'>
         <!--<h3 class="sideColHeadings">#channels</h3>-->
         <div id="listChannels"></div>
         <div class="row">
@@ -187,6 +193,9 @@ var loggedIn = false;
 var twitterUsername;
 var twitterAvatarURL;
 
+var botUsername = "@YourSocialApp";
+var botAvatarURL = "https://pbs.twimg.com/profile_images/430998461488431104/w3B0faE8_normal.png";
+
 function login(socialnetwork) {
 
     $('#chatLogin').modal('hide')
@@ -244,11 +253,19 @@ function changeChannel(channelName) {
         })
     })
 
+   console.log("Changing channel to: " + channelName)
 
+   fadeAlert('titleAlertRow', 'info', 500, 2500, 'You switched to a new channel: <strong>#' + channelName + '</strong>')
 
+}
 
-    console.log("Changing channel to: " + channelName)
+function fadeAlert(targetID, alertType, fadeIn, fadeOut, htmlMsg) {
 
+    console.log("targetid: " + targetID + " fadein fadeout: " + fadeIn + " " + fadeOut + " msg: " + htmlMsg)
+
+    $('#' + targetID).html('<div class="alert alert-' + alertType + '" role="alert">' + htmlMsg + '</div>')
+    $('#' + targetID).fadeIn(fadeIn)
+    $('#' + targetID).fadeOut(fadeOut);
 }
 
 function addNewChannel(channelName) {
@@ -280,12 +297,27 @@ function addNewChannel(channelName) {
         // Now push it into the channels node
         chatDB.child('channels').child(channelName).update({ active: true })
 
+        fadeAlert('titleAlertRow', 'success', 500, 1500, 'Your new channel was created: <strong>#' + channelName + '</strong>')
+
         // Now clear and close the modal
         $('#newChannelError').html("")
         $('#channelName').val("")
         $('#addNewChannel').modal('hide')
 
-        changeChannel(channelName)
+        // Note: If this alert fires before the previous is done (3 seconds, or 3,000 micro seconds),
+        // there is a conflict and the 2nd displays twice (the 1st not at all)
+        setTimeout(function() {
+            changeChannel(channelName)
+            
+            var timestamp = Date.now()
+
+            var text = "It's a brand new channel. Ready to start off the chat?"
+
+            // Send the original message
+            chatDB.child("Channel_Posts").child(channelName).child('messages').push({name: botUsername, text: text, dateAdded: timestamp, avatarURL: botAvatarURL})
+
+
+        }, 2000)
 
     }
     console.log("Adding a new channel")
@@ -366,11 +398,58 @@ chatDB.child('loggedUsers').on('child_added', function(data) {
 
 })
 
+
+function favoriteChannel(channel) {
+    console.log("Favoriting channel: " + channel)
+
+    chatDB.child('users').child(twitterUsername).child('favChannels').child(channel).once('value', function(snap) {
+        var isFavorite = (snap.val() !== null);
+        markFavChannel(channel,isFavorite)
+    })
+
+}
+
+function markFavChannel(channel, isFavorite) {
+    if (!isFavorite) {
+        console.log("Marking " + channel + " as a favorite now")
+        chatDB.child('users').child(twitterUsername).child('favChannels').child(channel).set({fav: true})
+
+        $('#favChannel-' + channel).attr('src','/img/channel-icon-fav.png')
+
+        fadeAlert('titleAlertRow', 'success', 500, 2500, 'New favorite channel added: <strong>#' + channel + '</strong>')
+    }
+    else {
+        console.log("Turning off fav status for " + channel)
+        chatDB.child('users').child(twitterUsername).child('favChannels').child(channel).remove()
+
+        $('#favChannel-' + channel).attr('src','/img/channel-icon-off.png')
+
+        fadeAlert('titleAlertRow', 'warning', 500, 2500, 'Channel favorite removed: <strong>#' + channel + '</strong>')
+    }
+}
+
 chatDB.child('channels').on('child_added', function(data) {
 
     var channelName = data.key()
 
-    $('#listChannels').append("<div class='row'><div class='col-lg-11'><img src='/img/channel-icon-off.png'> <a class='channelLink' href='javascript:changeChannel(\"" + channelName + "\")'>#" + channelName + "</a></div></div>");
+    // We'll do a check to see if the channel is a fav for the current user.
+    // That way, we'll know the default status for the heart icons on load
+    var heartIcon = null
+    chatDB.child('users').child(twitterUsername).child('favChannels').child(channelName).once('value', function(snap) {  
+            var isFavorite = (snap.val() !== null);
+            // Now we set the image to use
+
+            if (isFavorite) {
+                heartIcon = '/img/channel-icon-fav.png'
+            }
+            else {
+                heartIcon = '/img/channel-icon-off.png'
+            }
+
+            $('#listChannels').append("<div class='row'><div class='col-lg-11'><img id='favChannel-" + channelName + "' onclick='javascript:favoriteChannel(\"" + channelName + "\")' src='" + heartIcon + "'> <a class='channelLink' href='javascript:changeChannel(\"" + channelName + "\")'>#" + channelName + "</a></div></div>")
+    })
+
+      
 
 })
 
