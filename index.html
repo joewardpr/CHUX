@@ -1,0 +1,632 @@
+<!doctype html>
+<html>
+<head>
+
+    <title>CHUX: Chat App Demo</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="chux.css">
+
+    <script src="moment.min.js"></script>
+
+    <script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js'></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+</head>
+
+<body>
+
+<div class='container-fluid'>
+
+<div class="row"><div class="col-lg-12">
+
+    <!-- Modal: Social Login -->
+    <div class="modal fade" id="chatLogin" tabindex="-1" role="dialog" aria-labelledby="chatLoginLabel">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id=chatLoginLabel">Login with Twitter</h4>
+                </div>
+                <div class="modal-body text-center">
+                    <a id='twitterLoginButton' href="javascript:login('twitter')"><i class="fa fa-twitter-square fa-5x"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Modal -->
+
+    <!-- Modal: Add New Channel-->
+    <div class="modal fade" id="addNewChannel" tabindex="-1" role="dialog" aria-labelledby="addNewChannelLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id=addNewChannelnLabel">Add New Channel</h4>
+                </div>
+                <div class="modal-body">
+                        <div class="row">
+                            <div class="col-lg-12" style="padding-bottom: 5px">
+                                <div id="newChannelError" class="alert alert-warning" style="display: none" role="alert"></span>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-1">
+                                &nbsp;
+                            </div>
+                            <div class="col-lg-11">
+                                <input class='channelInputBox' id="channelName" placeholder="What's your new channel name?">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="addChannelButton" type="button" class="btn btn-primary" onClick="javascript:addNewChannel($('#channelName').val())">Add</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Modal -->
+
+</div></div>
+
+<div class='row' id="navRow">
+    <!--NAVBAR-->
+    <div class="col-lg-3">
+        <div class='channelIcon'>&nbsp;</div>
+        <div class='usersIcon'>&nbsp;</div>
+        <div class='loginStatusBox' id='loggedUserAvatar'>&nbsp;</div>
+        <!--<div class='alertsBox'>10 New</div>-->
+    </div>
+    <div class="col-lg-8">
+        &nbsp;
+    </div>
+    <div class="col-lg-1">
+        <div class='loginStatusBox' id='loggedUser'>&nbsp;</div>
+    </div>
+</div>
+
+<div class="row">
+    <div class='col-lg-6' style="margin-top: 15px; margin-bottom: -25px" id="titleAlertRow"></div>
+    <div class='col-lg-6' style="height: 75px; margin-top: 15px; margin-bottom: -25px">&nbsp;</div>
+</div>
+
+
+<div class="row">
+    <div id="channelTitle" class="col-bg-12 titleRow" style="display:none">
+        <span class="titleChannelText">You're chatting in <span id = "titleChannelText" class="titleChannelHighlight">#Welcome</span></span>
+        <input type="hidden" id="hiddenChannelName" value='welcome'>
+    </div>
+</div>
+
+<div class='row messageInputRow'>
+    <div class='col-lg-9'>
+
+
+
+        <!-- Message list limited to 500px. Then it becomes scrollable. -->
+        <div class='row'>
+            <div class='col-lg-12 messagesListArea' id='messagesDiv'></div>
+        </div>
+
+    </div>
+    <div class="col-lg-1">
+        &nbsp;
+    </div>
+    <div class='col-lg-2' id='channelsList'>
+        <!--<h3 class="sideColHeadings">#channels</h3>-->
+        <div id="listChannels"></div>
+        <div class="row">
+            <div class="col-lg-12">
+                <img src="/img/icon-show-all-channels.png">
+                <a class='sideColLinks' href="javascript: $('#addNewChannel').modal('show')">Add new channel</a>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-12">&nbsp;</div>
+        </div>
+        <!--<h3 class="sideColHeadings">#users</h3>-->
+        <div id="listUsers"></div>
+    </div>
+</div>
+
+<div class="row" id='chatBoxArea' style='display: none;'>
+
+    <div class="col-lg-12">
+        <div>&nbsp;</div>
+
+        <input type='hidden' id='nameInput'>
+        <input type='hidden' id='avatarURL'>
+        <input class='messageInputBox' id='messageInput' placeholder="What's up?">
+        <div style="height: 25px">&nbsp;</div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-12 text-right">Created by <a href="http://socialresponseapp.com"><img src="/img/logo-social-response-app-gray.png" style="height: 18px"></a></div>
+</div>
+
+<script>
+
+// Give focus to the input box when the modal loads
+$('#addNewChannel').on('shown.bs.modal', function () {
+    $('#channelName').focus();
+})
+
+// Submit the new channel form when you click ENTER
+$('#channelName').keypress(function(e){
+    if(e.which == 13){//Enter key pressed
+        $('#addChannelButton').click();//Trigger search button click event
+    }
+});
+
+console.log("Creating two firebase resources: chatDB and channelDB")
+var chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
+var channelDB = new Firebase('https://intense-torch-4337.firebaseio.com/Channel_Posts/welcome/')
+
+function initChat() {
+
+    $('#messagesDiv').hide()
+    $('#messageInput').hide()
+    $('#channelsList').hide()
+    $('#chatBoxArea').hide()
+    $('#navRow').hide()
+    $('#channelTitle').hide()
+    changeChannel("welcome") // We start out on the welcome channel
+
+    console.log('Initializing chat, and changing to welcome channel')
+}
+
+function logout(){
+    chatDB.unauth()
+
+    initChat()
+
+    // We'll just refresh the page when they logout (for now)
+    location.reload()
+}
+
+var loggedIn = false;
+var twitterUsername;
+var twitterAvatarURL;
+
+var botUsername = "@YourSocialApp";
+var botAvatarURL = "https://pbs.twimg.com/profile_images/430998461488431104/w3B0faE8_normal.png";
+
+function login(socialnetwork) {
+
+    $('#chatLogin').modal('hide')
+
+    chatDB.authWithOAuthPopup("twitter", function(error, authData) {
+
+        if (error) {
+
+        } else {
+            loggedIn = true;
+            // We'll just refresh the page when they logout (for now)
+            location.reload()
+        }
+    });
+}
+
+function deleteChatMessage(channelName, postid) {
+    chatDB.child('Channel_Posts').child(channelName).child('messages').child(postid).remove()
+    console.log("Deleting a message from channel (deleteChatMessage): " + channelName)
+}
+
+function changeChannel(channelName) {
+    
+    $('#titleChannelText').html("#" + channelName)
+    $('#hiddenChannelName').val(channelName)
+
+    var channelDB = new Firebase('https://intense-torch-4337.firebaseio.com/Channel_Posts/' + channelName + '/')
+
+
+    // Clear the message content. We'll be displaying the new channel
+    $('#messagesDiv').empty()
+
+    // We have to add the listener each time we switch channels
+    // Do we have to destroy the previous listener? TBD
+    channelDB.child('messages').off('child_added')
+    channelDB.child('messages').on('child_added', function(data) {
+        displayChannelMessages(data)
+    })
+
+    //channelDB.child('messages').off('child_removed')
+    channelDB.child('messages').on('child_removed', function(data) {
+
+        channelDB.once('value', function (data) {
+
+            $('#messagesDiv').html('') // Clear the current messages
+            if (data.val() !== null) {
+
+                var messages = data.val().messages
+
+                $.each(messages, function(key, msg) {
+                    displayChatMessage(channelName, msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
+                })
+            }
+
+        })
+    })
+
+   console.log("Changing channel to: " + channelName)
+
+   fadeAlert('titleAlertRow', 'info', 500, 2500, 'You switched to a new channel: <strong>#' + channelName + '</strong>')
+
+}
+
+function fadeAlert(targetID, alertType, fadeIn, fadeOut, htmlMsg) {
+
+    console.log("targetid: " + targetID + " fadein fadeout: " + fadeIn + " " + fadeOut + " msg: " + htmlMsg)
+
+    $('#' + targetID).html('<div class="alert alert-' + alertType + '" role="alert">' + htmlMsg + '</div>')
+    $('#' + targetID).fadeIn(fadeIn)
+    $('#' + targetID).fadeOut(fadeOut);
+}
+
+function addNewChannel(channelName) {
+
+    channelName = channelName.replace(/^\s+/,"") // Leading white space turns into nothing
+    channelName = channelName.replace(/\s+$/,"") // Trailing white space turns into nothing
+    channelName = channelName.replace(/[^\w]+/g, "-") // Get rid of funky stuff
+    channelName = channelName.replace(/^\s+/,"") // Leading dashes removed
+    channelName = channelName.replace(/\s+$/,"") // Trailing dashes removed
+
+    if (channelName.length == 0) {
+        $('#newChannelError').html("You must enter a channel name, duh!")
+        $('#newChannelError').show()
+        return
+    }
+    else if (channelName.length > 20) {
+        $('#newChannelError').html("Shorter amigo! Less characters saves a digital tree.")
+        $('#newChannelError').show()
+        $('#channelName').attr("placeholder", "What's your *shorter* channel name?")
+        $('#channelName').val("")
+        return
+    }
+    else {
+        // They entered a channel name.
+        // We'll get rid of non-alphanumeric characters, replacing them with dashes (same with spaces)
+
+        channelName = channelName.toLowerCase(); // Lowercase only
+
+        // Now push it into the channels node
+        chatDB.child('channels').child(channelName).update({ active: true })
+
+        fadeAlert('titleAlertRow', 'success', 500, 1500, 'Your new channel was created: <strong>#' + channelName + '</strong>')
+
+        // Now clear and close the modal
+        $('#newChannelError').html("")
+        $('#channelName').val("")
+        $('#addNewChannel').modal('hide')
+
+        // Note: If this alert fires before the previous is done (3 seconds, or 3,000 micro seconds),
+        // there is a conflict and the 2nd displays twice (the 1st not at all)
+        setTimeout(function() {
+            changeChannel(channelName)
+            
+            var timestamp = Date.now()
+
+            var text = "It's a brand new channel. Ready to start off the chat?"
+
+            // Send the original message
+            chatDB.child("Channel_Posts").child(channelName).child('messages').push({name: botUsername, text: text, dateAdded: timestamp, avatarURL: botAvatarURL})
+
+
+        }, 2000)
+
+    }
+    console.log("Adding a new channel")
+}
+
+
+
+initChat()
+
+// Are we already logged in?
+if (chatDB.getAuth()){
+
+    authData = chatDB.getAuth()
+
+    loggedIn = true
+
+    twitterUsername = authData.twitter.username
+    twitterAvatarURL = authData.twitter.profileImageURL
+
+    var timestamp = Date.now()
+
+    chatDB.child('loggedUsers').child(twitterUsername).update({ avatarURL: twitterAvatarURL, dateAdded: timestamp })
+
+    $('#navRow').show()
+    $('#chatBoxArea').show()
+    $('#messageInput').show()
+    $('#channelsList').show()
+    $('#messagesDiv').show()
+    $('#channelTitle').show()
+    //$('#loggedUser').html('Logged in as @' + twitterUsername + ' <a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
+    $('#loggedUserAvatar').html('<img class="img-circle" style="height: 24px" src="' +  twitterAvatarURL + '">')
+    $('#loggedUser').html('<a href="javascript:logout()" role="button" class="btn btn-danger btn-xs">Logout</a>')
+    $('#nameInput').val('@' + twitterUsername)
+    $('#avatarURL').val(twitterAvatarURL)
+
+    // Display the current logged in user's avatar in the input box
+    $('#messageInput').css('background-image', 'url(' + twitterAvatarURL + ')').css('background-size','24px 24px');
+}
+else {
+    $('#chatLogin').modal('show')
+}
+
+
+function displayChannelMessages(data) {
+    var message = data.val()
+    var messageKey = data.key()
+
+    console.log("We are calling displayChannelMessages with: " + message.text)
+
+    var c = $('#hiddenChannelName').val() // We need to know the channel to delete messages
+
+    console.log("Displaying a channel message (inside displayChannelMessages")
+
+    displayChatMessage(c,message.name, message.text, message.avatarURL, message.dateAdded, messageKey)
+}
+
+// Update the chat message list when a new message is added
+// The data will contain the new message only
+// channelDB.child('messages').on('child_added', function(data) {
+//     displayChannelMessages(data)
+// })
+
+
+
+now = Date.now() - 900 // 15 minutes ago
+
+// Display new users logging on
+chatDB.child('loggedUsers').on('child_added', function(data) {
+
+    var key = data.key()
+    var timestamp = data.val().dateAdded
+    var avatarURL = data.val().avatarURL
+
+    $('#listUsers').append("<a href='#' data-toggle='tooltip' data-placement='top' title='" + key + "' class='steel-tooltip'><img class='postAvatarLogged activeAvatar img-circle' src='" + avatarURL + "'></a>");
+
+    // Have to renable the tooltips because this content gets added after the page loads
+    $("[data-toggle='tooltip']").tooltip();
+
+})
+
+
+function favoriteChannel(channel) {
+    console.log("Favoriting channel: " + channel)
+
+    chatDB.child('users').child(twitterUsername).child('favChannels').child(channel).once('value', function(snap) {
+        var isFavorite = (snap.val() !== null);
+        markFavChannel(channel,isFavorite)
+    })
+
+}
+
+function markFavChannel(channel, isFavorite) {
+    if (!isFavorite) {
+        console.log("Marking " + channel + " as a favorite now")
+        chatDB.child('users').child(twitterUsername).child('favChannels').child(channel).set({fav: true})
+
+        $('#favChannel-' + channel).attr('src','/img/channel-icon-fav.png')
+
+        fadeAlert('titleAlertRow', 'success', 500, 2500, 'New favorite channel added: <strong>#' + channel + '</strong>')
+    }
+    else {
+        console.log("Turning off fav status for " + channel)
+        chatDB.child('users').child(twitterUsername).child('favChannels').child(channel).remove()
+
+        $('#favChannel-' + channel).attr('src','/img/channel-icon-off.png')
+
+        fadeAlert('titleAlertRow', 'warning', 500, 2500, 'Channel favorite removed: <strong>#' + channel + '</strong>')
+    }
+}
+
+chatDB.child('channels').on('child_added', function(data) {
+
+    var channelName = data.key()
+
+    // We'll do a check to see if the channel is a fav for the current user.
+    // That way, we'll know the default status for the heart icons on load
+    var heartIcon = null
+    chatDB.child('users').child(twitterUsername).child('favChannels').child(channelName).once('value', function(snap) {  
+            var isFavorite = (snap.val() !== null);
+            // Now we set the image to use
+
+            if (isFavorite) {
+                heartIcon = '/img/channel-icon-fav.png'
+            }
+            else {
+                heartIcon = '/img/channel-icon-off.png'
+            }
+
+            $('#listChannels').append("<div class='row'><div class='col-lg-11'><img id='favChannel-" + channelName + "' onclick='javascript:favoriteChannel(\"" + channelName + "\")' src='" + heartIcon + "'> <a class='channelLink' href='javascript:changeChannel(\"" + channelName + "\")'>#" + channelName + "</a></div></div>")
+    })
+
+      
+
+})
+
+// Update the chat message list when a post is deleted.
+// The data will contain only the deleted post.
+// We will get all the post data to redisplay the list.
+//
+// Note: Another method would be to use Jquery to find and selective remove only
+// the deleted post from the list (without updating the entire list)
+// chatDB.child('messages').on('child_removed', function(data) {
+
+//     chatDB.once('value', function (data) {
+
+//         $('#messagesDiv').html('') // Clear the current messages
+//         if (data.val() !== null) {
+
+//             var messages = data.val().messages
+
+//             $.each(messages, function(key, msg) {
+//                 displayChatMessage(msg.name, msg.text, msg.avatarURL, msg.dateAdded, key)
+//             })
+//         }
+
+//     })
+// })
+
+// This listener will run every time a change is made to the data
+// chatDB.child('messages').on('value', function(data) {
+//     // Placeholder; TBD
+// })
+
+// Add a single message to the list (div) by appending it to current data.
+// It scrolls the page to the last message.
+function displayChatMessage(channelName, name, text, avatarURL, dateAdded, postid) {
+
+    if (!loggedIn) {
+        return;
+    }
+
+    console.log("We are in displayChatMessage for: " + text)
+
+    // We might need to switch to a new Firebase resource for the sub-channel
+    //chatDB = new Firebase('https://intense-torch-4337.firebaseio.com')
+
+    if (postid) {
+        //var deleteLink = '[<a href="' + postid + '">x</a>]'
+        var deleteLink = '<a href="javascript:deleteChatMessage(\'' + channelName + '\',\'' + postid + '\');"><span class="glyphicon glyphicon-remove"></span></a>'
+    }
+    else{
+        var deleteLink = ''
+    }
+
+    var theDate = new Date(dateAdded);
+    dateString = theDate.toGMTString();
+
+    var m = moment(theDate).fromNow()
+
+    msgRow = "<div class='row-fluid' style='margin-top: 16px'>"
+    msgRow += "<div class='col-sm-1 postAvatar'>"
+
+
+    msgRow += "<a href='#' data-toggle='tooltip' data-placement='right' title='" + name + "' class='steel-tooltip'><img class='postAvatar img-circle' src='" + avatarURL + "'></a>"
+    msgRow += "</div>"
+    msgRow += "<!--<div class='col-sm-1 postUsername'>-->"
+    msgRow += "<!--<span class='label label-info'>" + name + "</span></div>-->"
+    msgRow += "<div class='col-sm-8 postText'>" + text + "</div>"
+    msgRow += "<div class='col-sm-2 postTimeText'>" + ' ' + m + "</div>"
+   
+
+
+    deleteLinkOn = "" // Only displaying delete icons for our own tweets or superuser (joewardpr)
+    var tUser = "@" + twitterUsername
+
+    console.log("Twitter username is: " + tUser)
+    console.log("Username for poster is: " + name)
+
+    if (tUser == name || tUser == "@joewardpr" ){
+        deleteLinkOn = deleteLink
+        console.log("Turning the delete link on for: " + name + "'s post.")
+    }
+    {
+        console.log("It is insisting these are not equivalent: " + tUser + " and " + name)
+    }
+    msgRow += "<div class='col-sm-1 postDeleteLink'>" + deleteLinkOn +  "</div>"
+    
+    msgRow += "</div>"
+    msgRow += "<div class='clearfix'></div>"
+
+
+    $('#messagesDiv').append(msgRow)
+    $('#messagesDiv')[0].scrollTop = $('#messagesDiv')[0].scrollHeight
+
+    // Must activate the tool tips each time the message list is updated
+    $(function () {
+        $("[data-toggle='tooltip']").tooltip();
+    });
+}
+
+// Listen for the ENTER key.
+// When hit, get user name and message
+// Add it to Firebase
+// Firebase will throw a child_added event
+$('#messageInput').keypress(function (e) {
+    if (e.keyCode == 13) {
+        var name = $('#nameInput').val()
+        var text = $('#messageInput').val()
+        var avatarURL = $('#avatarURL').val()
+
+        var channelName = $('#hiddenChannelName').val()
+
+        var timestamp = Date.now()
+
+        // Check for youTube video link sharing
+        if (text.match(/(https{0,1}:\/\/(www\.)*?(youtube\.com\/watch\?v=|youtu\.be\/)(\w+))/)) {
+            // Looks for both regular youTube and shortened URL versions
+
+            var youTubeLink = RegExp.$1;
+
+            var embedlyURL = "https://api.embedly.com/1/oembed?key=:1ba8ecc3b15b4c17b705ffc9721206b0&width=400&maxwidth=400&url="
+            var embedlyYouTube = embedlyURL + youTubeLink
+            var videoEmbedCode = ""
+
+            $.ajax({
+                url: encodeURI(embedlyYouTube),
+                dataType: 'json',
+                async: false,
+                success: function(data) {
+                    videoEmbedCode = data.html
+                    text += "<br>" + videoEmbedCode
+                }
+            });
+
+        }
+
+        // Send the original message
+        chatDB.child("Channel_Posts").child(channelName).child('messages').push({name: name, text: text, dateAdded: timestamp, avatarURL: avatarURL})
+        $('#messageInput').val('')
+
+
+        // Check for the @findhashtags plugin
+        if (text.match(/^@findhashtags\s+([\w ]+)/)) {
+
+            var tweetKeyword = RegExp.$1
+
+            $.getJSON( encodeURI("/process_tags_json.php?keyword=" + tweetKeyword), function( data ) {
+
+                var hashtags = [];
+                var hashtagsList = ''
+                var numHashtags = 0
+                $.each( data, function( key, val ) {
+
+                    // Only take the first 5 hashtags
+                    if (numHashtags < 5) {
+                        hashtagsList += '<button class="btn btn-primary btn-xs">#' + key + '</button>&nbsp;'
+                    }
+                    numHashtags += 1
+
+                });
+
+                // Hashtags are identified
+                // Send them as a message
+                var hashtagText = name + ' requested hashtags for: ' + tweetKeyword
+                hashtagText += '.</br></br>' + hashtagsList
+                timestamp = Date.now(); // Refresh the timestamp
+
+                chatDB.child('Channel_Posts').child(channelName).child('messages').push({name: name, text: hashtagText, dateAdded: timestamp, avatarURL: avatarURL})
+
+            });
+        }
+
+    }
+
+})
+
+</script>
+
+</div>
+
+</body>
+</html>
